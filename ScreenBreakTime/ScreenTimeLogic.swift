@@ -1,8 +1,7 @@
-//
 import Foundation
 
 func calculateRemainingTime(
-    records: some Sequence<ScreenTime>,
+    records: some Sequence<Event>,
     currentTime: Date,
     movingWindowInterval: TimeInterval,
     maxActiveTimeInterval: TimeInterval
@@ -10,22 +9,24 @@ func calculateRemainingTime(
     guard maxActiveTimeInterval < movingWindowInterval else {
         fatalError("Active time interval must be less than the moving window interval.")
     }
-    
-    var searchInterval = 0 ..< Int(maxActiveTimeInterval) + 1
+
+    var searchInterval = 0..<Int(maxActiveTimeInterval) + 1
     while true {
         let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
         guard pivotTime != searchInterval.lowerBound,
-              pivotTime != searchInterval.upperBound else {
+            pivotTime != searchInterval.upperBound
+        else {
             break
         }
-        
+
         let activeUntil = currentTime.addingTimeInterval(TimeInterval(pivotTime))
         if canActiveUntil(
             currentTime: currentTime,
             activeUntil: activeUntil,
             records: records,
             movingWindowInterval: movingWindowInterval,
-            maxActiveTimeInterval: maxActiveTimeInterval) {
+            maxActiveTimeInterval: maxActiveTimeInterval)
+        {
             searchInterval = pivotTime..<searchInterval.upperBound
         } else {
             searchInterval = searchInterval.lowerBound..<pivotTime
@@ -35,10 +36,10 @@ func calculateRemainingTime(
     return TimeInterval(searchInterval.lowerBound)
 }
 
-func canActiveUntil(
+private func canActiveUntil(
     currentTime: Date,
     activeUntil futureTime: Date,
-    records: some Sequence<ScreenTime>,
+    records: some Sequence<Event>,
     movingWindowInterval: TimeInterval,
     maxActiveTimeInterval: TimeInterval
 ) -> Bool {
@@ -54,13 +55,13 @@ func canActiveUntil(
             active = false
             break
         }
-        
+
         heartBeatTime = screenTime.timestamp
-        
+
         if screenTime.state == .heartBeat {
             continue
         }
-                
+
         active = screenTime.state == .active
         if screenTime.timestamp < movingWindowStartTime {
             break
