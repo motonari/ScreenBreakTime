@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "9885D509-EAE7-41BC-9AF6-E10ABB64F971",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:ScreenBreakTime.xcodeproj",
+      "identifier" : "462BD08D2F5BAA2A00C233E6",
+      "name" : "ScreenBreakTime"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:ScreenBreakTime.xcodeproj",
+        "identifier" : "46546F412F5F47C9002D4E00",
+        "name" : "ScreenBreakTimeTests"
+      }
+    }
+  ],
+  "version" : 1
+}
