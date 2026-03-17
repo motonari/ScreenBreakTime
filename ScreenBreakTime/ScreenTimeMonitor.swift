@@ -100,11 +100,11 @@ class ScreenTimeMonitor: ObservableObject {
             let records = try modelContainer.mainContext.fetch(fetchDescriptor, batchSize: 10)
 
             self.records = Array(records)
-            remainingTime = calculateRemainingTime(
-                records: records,
+            remainingTime = findRemainingScreenTime(
+                events: records,
                 currentTime: .now,
-                movingWindowInterval: 60 * 60,
-                maxActiveTimeInterval: 60 * 45)
+                lookBackDuration: 60 * 60,
+                maxScreenTime: 60 * 45)
 
         } catch {
             Logger.database.error("Failed to read from the database: \(error.localizedDescription)")

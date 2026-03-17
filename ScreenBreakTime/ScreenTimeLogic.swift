@@ -1,16 +1,27 @@
 import Foundation
 
-func calculateRemainingTime(
-    records: some Sequence<Event>,
+/// Find the maximum screen time allowed at this moment.
+///
+/// The maximum screen time is defined such that, at any moment `t`,
+/// the on-screen duration cannot exceed `maxScreenTime` in the moving
+/// window interval `[t-lookBackDuration, t)`.
+///
+/// - Parameters:
+///   - events: The screen time events.
+///   - currentTime: The current time.
+///   - lookBackDuration: The moving window size to determine the screen time allowance.
+///   - maxScreenTime: The maximum screen time allowed within the look back window.
+func findRemainingScreenTime(
+    events: some Sequence<Event>,
     currentTime: Date,
-    movingWindowInterval: TimeInterval,
-    maxActiveTimeInterval: TimeInterval
+    lookBackDuration: TimeInterval,
+    maxScreenTime: TimeInterval
 ) -> TimeInterval {
-    guard maxActiveTimeInterval < movingWindowInterval else {
+    guard maxScreenTime < lookBackDuration else {
         fatalError("Active time interval must be less than the moving window interval.")
     }
 
-    var searchInterval = 0..<Int(maxActiveTimeInterval) + 1
+    var searchInterval = 0..<Int(maxScreenTime) + 1
     while true {
         let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
         guard pivotTime != searchInterval.lowerBound,
@@ -20,12 +31,12 @@ func calculateRemainingTime(
         }
 
         let activeUntil = currentTime.addingTimeInterval(TimeInterval(pivotTime))
-        if canActiveUntil(
+        if canBeOnScreen(
+            until: activeUntil,
+            events: events,
             currentTime: currentTime,
-            activeUntil: activeUntil,
-            records: records,
-            movingWindowInterval: movingWindowInterval,
-            maxActiveTimeInterval: maxActiveTimeInterval)
+            lookBackDuration: lookBackDuration,
+            maxScreenTime: maxScreenTime)
         {
             searchInterval = pivotTime..<searchInterval.upperBound
         } else {
@@ -36,22 +47,22 @@ func calculateRemainingTime(
     return TimeInterval(searchInterval.lowerBound)
 }
 
-private func canActiveUntil(
+private func canBeOnScreen(
+    until futureTime: Date,
+    events: some Sequence<Event>,
     currentTime: Date,
-    activeUntil futureTime: Date,
-    records: some Sequence<Event>,
-    movingWindowInterval: TimeInterval,
-    maxActiveTimeInterval: TimeInterval
+    lookBackDuration: TimeInterval,
+    maxScreenTime: TimeInterval
 ) -> Bool {
-    let movingWindowStartTime = futureTime.addingTimeInterval(-movingWindowInterval)
+    let movingWindowStartTime = futureTime.addingTimeInterval(-lookBackDuration)
 
     var totalActiveTime = currentTime.distance(to: futureTime)
 
     var sessionEndTime = currentTime
     var active = false
     var heartBeatTime = currentTime
-    for screenTime in records {
-        if screenTime.timestamp.distance(to: heartBeatTime) > movingWindowInterval {
+    for screenTime in events {
+        if screenTime.timestamp.distance(to: heartBeatTime) > lookBackDuration {
             active = false
             break
         }
@@ -78,5 +89,5 @@ private func canActiveUntil(
     if active {
         totalActiveTime += movingWindowStartTime.distance(to: sessionEndTime)
     }
-    return maxActiveTimeInterval >= totalActiveTime
+    return maxScreenTime >= totalActiveTime
 }

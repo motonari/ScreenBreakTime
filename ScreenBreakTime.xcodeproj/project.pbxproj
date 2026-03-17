@@ -23,7 +23,7 @@
 		46546F4B2F5F47D1002D4E00 /* Exceptions for "ScreenBreakTime" folder in "ScreenBreakTimeTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				ScreenTime.swift,
+				Event.swift,
 				ScreenTimeLogic.swift,
 			);
 			target = 46546F412F5F47C9002D4E00 /* ScreenBreakTimeTests */;
