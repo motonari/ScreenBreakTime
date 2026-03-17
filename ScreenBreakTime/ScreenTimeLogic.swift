@@ -21,16 +21,11 @@ func findRemainingScreenTime(
         fatalError("Active time interval must be less than the moving window interval.")
     }
 
-    var searchInterval = 0..<Int(maxScreenTime) + 1
-    while true {
+    var searchInterval = TimeInterval(0)..<maxScreenTime
+    while searchInterval.upperBound - searchInterval.lowerBound > 1.0 {
         let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
-        guard pivotTime != searchInterval.lowerBound,
-            pivotTime != searchInterval.upperBound
-        else {
-            break
-        }
 
-        let activeUntil = currentTime.addingTimeInterval(TimeInterval(pivotTime))
+        let activeUntil = currentTime.addingTimeInterval(pivotTime)
         if canBeOnScreen(
             until: activeUntil,
             events: events,
@@ -44,7 +39,8 @@ func findRemainingScreenTime(
         }
     }
 
-    return TimeInterval(searchInterval.lowerBound)
+    let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
+    return pivotTime.rounded()
 }
 
 private func canBeOnScreen(
