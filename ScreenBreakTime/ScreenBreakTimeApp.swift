@@ -23,13 +23,13 @@ struct ScreenBreakTimeApp: App {
         }
         .menuBarExtraStyle(.window)
         .onChange(of: monitor.remainingTime) { oldValue, newValue in
-            if newValue <= 0 {
-                Logger.action.log("Invoking /usr/bin/pmset sleepnow")
+            makeAnnouncement(
+                previousRemainingTime: oldValue,
+                currentRemainingTime: newValue
+            )
 
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-                process.arguments = ["sleepnow"]
-                try! process.run()
+            if newValue <= 0 {
+                sleepNow()
             }
         }
     }
@@ -82,6 +82,15 @@ struct ScreenBreakTimeApp: App {
                 }
             }
         }
+    }
+
+    private func sleepNow() {
+        Logger.action.log("Invoking /usr/bin/pmset sleepnow")
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.arguments = ["sleepnow"]
+        try! process.run()
     }
 }
 
