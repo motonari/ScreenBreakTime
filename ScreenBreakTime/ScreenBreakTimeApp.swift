@@ -75,7 +75,7 @@ struct ScreenBreakTimeApp: App {
 
         for announcement in announcements {
             if (currentRemainingTime <= announcement.remainingTime)
-                && (announcement.remainingTime <= previousRemainingTime)
+                && (announcement.remainingTime < previousRemainingTime)
             {
                 Task {
                     await speechManager.speak(announcement.message)
