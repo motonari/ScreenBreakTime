@@ -4,8 +4,13 @@ import Foundation
 import OSLog
 import SwiftData
 
+struct RemainingTime: Equatable {
+    var duration: TimeInterval
+    var uuid = UUID()
+}
+
 class ScreenTimeMonitor: ObservableObject {
-    @Published var remainingTime: TimeInterval = 0
+    @Published var remainingTime = RemainingTime(duration: 0.0)
     @Published var records: [Event] = []
 
     static let shared = ScreenTimeMonitor()
@@ -111,11 +116,12 @@ class ScreenTimeMonitor: ObservableObject {
             let records = try modelContext.fetch(fetchDescriptor, batchSize: 10)
 
             self.records = Array(records)
-            remainingTime = findRemainingScreenTime(
+            let duration = findRemainingScreenTime(
                 events: records,
                 currentTime: .now,
                 lookBackDuration: 60 * 60,
                 maxScreenTime: 60 * 45)
+            remainingTime = RemainingTime(duration: duration)
 
         } catch {
             Logger.database.error("Failed to read from the database: \(error.localizedDescription)")

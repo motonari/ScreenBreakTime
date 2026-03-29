@@ -7,7 +7,7 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Text("Remaining: \(iso8601String(for: monitor.remainingTime))")
+            Text("Remaining: \(iso8601String(for: monitor.remainingTime.duration))")
                 .font(.title)
         }
         .padding()

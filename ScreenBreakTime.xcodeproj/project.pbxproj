@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		4678B2842F7950E4003CADCE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 462BD0862F5BAA2A00C233E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 462BD08D2F5BAA2A00C233E6;
+			remoteInfo = ScreenBreakTime;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		462017FC2F648AA400BB8A1F /* ScreenBreakTime.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = ScreenBreakTime.xctestplan; path = ScreenBreakTimeTests/ScreenBreakTime.xctestplan; sourceTree = "<group>"; };
 		462BD08E2F5BAA2A00C233E6 /* ScreenBreakTime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScreenBreakTime.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,6 +130,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				4678B2852F7950E4003CADCE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				46546F432F5F47C9002D4E00 /* ScreenBreakTimeTests */,
@@ -202,6 +213,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4678B2852F7950E4003CADCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 462BD08D2F5BAA2A00C233E6 /* ScreenBreakTime */;
+			targetProxy = 4678B2842F7950E4003CADCE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		462BD0972F5BAA2A00C233E6 /* Debug */ = {

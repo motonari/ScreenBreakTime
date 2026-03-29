@@ -24,11 +24,11 @@ struct ScreenBreakTimeApp: App {
         .menuBarExtraStyle(.window)
         .onChange(of: monitor.remainingTime) { oldValue, newValue in
             makeAnnouncement(
-                previousRemainingTime: oldValue,
-                currentRemainingTime: newValue
+                previousRemainingTime: oldValue.duration,
+                currentRemainingTime: newValue.duration
             )
 
-            if newValue <= 0 {
+            if newValue.duration <= 0 {
                 sleepNow()
             }
         }
