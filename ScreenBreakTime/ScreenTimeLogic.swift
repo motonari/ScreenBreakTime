@@ -39,8 +39,7 @@ func findRemainingScreenTime(
         }
     }
 
-    let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
-    return pivotTime.rounded()
+    return (searchInterval.lowerBound + searchInterval.upperBound) / 2
 }
 
 private func canBeOnScreen(
