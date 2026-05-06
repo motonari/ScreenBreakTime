@@ -1,30 +1,34 @@
 import AVFoundation
 import SwiftUI
+import Synchronization
 
 private class Delegate: NSObject, AVSpeechSynthesizerDelegate {
-    private var continuations = [AVSpeechUtterance: CheckedContinuation<Void, Never>]()
+    private let continuations = Mutex<[AVSpeechUtterance: CheckedContinuation<Void, Never>]>([:])
+
     func register(
         _ continuation: CheckedContinuation<Void, Never>, for utterance: AVSpeechUtterance
     ) {
-        continuations[utterance] = continuation
-    }
-
-    func speechSynthesizer(
-        _ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance
-    ) {
+        continuations.withLock {
+            $0[utterance] = continuation
+        }
     }
 
     func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance
     ) {
-        if let continuation = continuations.removeValue(forKey: utterance) {
-            continuation.resume()
+        let continuation = continuations.withLock {
+            $0.removeValue(forKey: utterance)
         }
+        continuation?.resume()
     }
 
     func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance
     ) {
+        let continuation = continuations.withLock {
+            $0.removeValue(forKey: utterance)
+        }
+        continuation?.resume()
     }
 }
 
