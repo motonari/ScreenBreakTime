@@ -39,7 +39,7 @@ func findRemainingScreenTime(
         }
     }
 
-    return (searchInterval.lowerBound + searchInterval.upperBound) / 2
+    return searchInterval.lowerBound
 }
 
 private func canBeOnScreen(
