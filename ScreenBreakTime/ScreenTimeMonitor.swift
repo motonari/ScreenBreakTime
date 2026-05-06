@@ -6,6 +6,14 @@ import SwiftData
 
 struct RemainingTime: Equatable {
     var duration: TimeInterval
+
+    // Make every remainingTime calculation unique so that we trigger
+    // the system sleep condition check every time even if the
+    // remaining time doesn't change.
+    //
+    // It is important to trigger the system sleep immediately again
+    // when the user wakes up the system while it is sleeping and the
+    // remaining time is still zero.
     var uuid = UUID()
 }
 
