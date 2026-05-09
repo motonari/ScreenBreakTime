@@ -7,7 +7,7 @@ import Foundation
 /// window interval `[t-lookBackDuration, t)`.
 ///
 /// - Parameters:
-///   - events: The screen time events.
+///   - events: The screen time events, ordered from newer ones to older ones.
 ///   - currentTime: The current time.
 ///   - lookBackDuration: The moving window size to determine the screen time allowance.
 ///   - maxScreenTime: The maximum screen time allowed within the look back window.
@@ -51,38 +51,49 @@ private func canBeOnScreen(
 ) -> Bool {
     let movingWindowStartTime = futureTime.addingTimeInterval(-lookBackDuration)
 
+    // `totalActiveTime` will have the total active screen time from
+    // `currentTime - lookBackduration` to `futureTime`. The initial
+    // value is set assuming the user will stay on-screen from now to
+    // `futureTime`.
     var totalActiveTime = currentTime.distance(to: futureTime)
 
+    // Now, look back `events` sequence and include on-screen time
+    // intervals which the user has spent already to
+    // `totalActiveTime`.
     var sessionEndTime = currentTime
     var active = false
     var heartBeatTime = currentTime
-    for screenTime in events {
-        if screenTime.timestamp.distance(to: heartBeatTime) > lookBackDuration {
+    for event in events {
+        if event.timestamp.distance(to: heartBeatTime) > lookBackDuration {
+            // This `event` (say, `event(t)`) was older than the look
+            // back duration, meaning that the system has been off
+            // until `event(t+1).timestamp`.
             active = false
             break
         }
 
-        heartBeatTime = screenTime.timestamp
+        heartBeatTime = event.timestamp
 
-        if screenTime.state == .heartBeat {
+        if event.state == .heartBeat {
             continue
         }
 
-        active = screenTime.state == .active
-        if screenTime.timestamp < movingWindowStartTime {
+        active = event.state == .active
+        if event.timestamp < movingWindowStartTime {
             break
         }
 
         if active {
-            totalActiveTime += screenTime.timestamp.distance(to: sessionEndTime)
+            totalActiveTime += event.timestamp.distance(to: sessionEndTime)
         }
 
-        sessionEndTime = screenTime.timestamp
+        sessionEndTime = event.timestamp
         active = false
     }
 
     if active {
         totalActiveTime += movingWindowStartTime.distance(to: sessionEndTime)
     }
-    return maxScreenTime >= totalActiveTime
+
+    return totalActiveTime <= maxScreenTime
 }
