@@ -1,6 +1,6 @@
 import Foundation
 
-/// Find the maximum screen time allowed at this moment.
+/// Find the maximum screen time allowed at this moment, in whole seconds.
 ///
 /// The maximum screen time is defined such that, at any moment `t`,
 /// the on-screen duration cannot exceed `maxScreenTime` in the moving
@@ -22,7 +22,7 @@ func findRemainingScreenTime(
     }
 
     var searchInterval = TimeInterval(0)..<maxScreenTime
-    while searchInterval.upperBound - searchInterval.lowerBound > 1.0 {
+    while searchInterval.upperBound - searchInterval.lowerBound >= 1.0 {
         let pivotTime = (searchInterval.lowerBound + searchInterval.upperBound) / 2
 
         let activeUntil = currentTime.addingTimeInterval(pivotTime)
@@ -39,7 +39,7 @@ func findRemainingScreenTime(
         }
     }
 
-    return searchInterval.lowerBound
+    return ((searchInterval.lowerBound + searchInterval.upperBound) / 2).rounded()
 }
 
 private func canBeOnScreen(
