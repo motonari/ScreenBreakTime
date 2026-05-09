@@ -42,6 +42,58 @@ func findRemainingScreenTime(
     return ((searchInterval.lowerBound + searchInterval.upperBound) / 2).rounded()
 }
 
+/// Find the minimum off-screen duration needed before the user can
+/// return and stay on-screen for `desiredScreenTime` seconds, in whole
+/// seconds.
+///
+/// - Parameters:
+///   - events: The screen time events, ordered from newer ones to older ones.
+///   - currentTime: The current time.
+///   - lookBackDuration: The moving window size to determine the screen time allowance.
+///   - maxScreenTime: The maximum screen time allowed within the look back window.
+///   - desiredScreenTime: The desired on-screen duration after returning.
+func findRequiredBreakTime(
+    events: some Sequence<Event>,
+    currentTime: Date,
+    lookBackDuration: TimeInterval,
+    maxScreenTime: TimeInterval,
+    desiredScreenTime: TimeInterval
+) -> TimeInterval {
+    guard maxScreenTime < lookBackDuration else {
+        fatalError("Active time interval must be less than the moving window interval.")
+    }
+    guard desiredScreenTime <= maxScreenTime else {
+        fatalError("Desired screen time must not exceed the maximum screen time.")
+    }
+
+    var searchInterval = TimeInterval(0)..<lookBackDuration
+    while searchInterval.upperBound - searchInterval.lowerBound >= 1.0 {
+        let pivotBreak = (searchInterval.lowerBound + searchInterval.upperBound) / 2
+
+        let resumeTime = currentTime.addingTimeInterval(pivotBreak)
+        let activeUntil = resumeTime.addingTimeInterval(desiredScreenTime)
+
+        let simulatedEvents =
+            [Event(timestamp: resumeTime, state: .active),
+             Event(timestamp: currentTime, state: .inactive)]
+            + Array(events)
+
+        if canBeOnScreen(
+            until: activeUntil,
+            events: simulatedEvents,
+            currentTime: resumeTime,
+            lookBackDuration: lookBackDuration,
+            maxScreenTime: maxScreenTime)
+        {
+            searchInterval = searchInterval.lowerBound..<pivotBreak
+        } else {
+            searchInterval = pivotBreak..<searchInterval.upperBound
+        }
+    }
+
+    return ((searchInterval.lowerBound + searchInterval.upperBound) / 2).rounded()
+}
+
 private func canBeOnScreen(
     until futureTime: Date,
     events: some Sequence<Event>,
