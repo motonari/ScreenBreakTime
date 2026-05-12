@@ -5,25 +5,39 @@ import OSLog
 import SwiftData
 
 struct RemainingTime: Equatable {
+    /// The remaining duration the user can stay on-screen.
     var duration: TimeInterval
 
-    // Make every remainingTime calculation unique so that we trigger
-    // the system sleep condition check every time even if the
-    // remaining time doesn't change.
-    //
-    // It is important to trigger the system sleep immediately again
-    // when the user wakes up the system while it is sleeping and the
-    // remaining time is still zero.
+    /// The necessary break time now to regain 50% of the screen time
+    /// allowance.
+    var requiredBreak: TimeInterval
+
+    /// A uniquifier.
+    ///
+    /// Make every remainingTime calculation unique so that we trigger
+    /// the system sleep condition check every time even if the
+    /// remaining time doesn't change.
+    ///
+    /// It is important to trigger the system sleep immediately again
+    /// when the user wakes up the system while it is sleeping and the
+    /// remaining time is still zero.
     var uuid = UUID()
 }
 
 class ScreenTimeMonitor: ObservableObject {
-    @Published var remainingTime = RemainingTime(duration: 0.0)
+    @Published var remainingTime = RemainingTime(duration: 0.0, requiredBreak: 0.0)
     @Published var records: [Event] = []
 
     static let shared = ScreenTimeMonitor()
 
     let modelContainer: ModelContainer
+
+    /// The sliding window size to limit the screen time.
+    let lookBackDuration: TimeInterval = 60 * 60
+
+    /// The number of seconds allowed to be active on the screen
+    /// between `now - lookBackDuration` and now.
+    let maxScreenTime: TimeInterval = 60 * 45
 
     private init() {
         do {
@@ -124,12 +138,22 @@ class ScreenTimeMonitor: ObservableObject {
             let records = try modelContext.fetch(fetchDescriptor, batchSize: 10)
 
             self.records = Array(records)
+
+            let now = Date.now
             let duration = findRemainingScreenTime(
                 events: records,
-                currentTime: .now,
-                lookBackDuration: 60 * 60,
-                maxScreenTime: 60 * 45)
-            remainingTime = RemainingTime(duration: duration)
+                currentTime: now,
+                lookBackDuration: lookBackDuration,
+                maxScreenTime: maxScreenTime)
+
+            let requiredBreak = findRequiredBreakTime(
+                events: records,
+                currentTime: now,
+                lookBackDuration: lookBackDuration,
+                maxScreenTime: maxScreenTime,
+                desiredScreenTime: maxScreenTime * 0.5)
+
+            remainingTime = RemainingTime(duration: duration, requiredBreak: requiredBreak)
 
         } catch {
             Logger.database.error("Failed to read from the database: \(error.localizedDescription)")

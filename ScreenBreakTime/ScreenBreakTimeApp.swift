@@ -25,7 +25,8 @@ struct ScreenBreakTimeApp: App {
         .onChange(of: monitor.remainingTime) { oldValue, newValue in
             makeAnnouncement(
                 previousRemainingTime: oldValue.duration,
-                currentRemainingTime: newValue.duration
+                currentRemainingTime: newValue.duration,
+                requiredBreakTime: newValue.requiredBreak
             )
 
             if newValue.duration <= 0 {
@@ -34,51 +35,59 @@ struct ScreenBreakTimeApp: App {
         }
     }
 
-    private func makeAnnouncement(
-        previousRemainingTime: TimeInterval,
-        currentRemainingTime: TimeInterval
-    ) {
-        struct Announcement {
-            let remainingTime: TimeInterval
-            let message: String
+    private func timeAnnouncement(for duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration.truncatingRemainder(dividingBy: 3600)) / 60
+        let seconds = Int(duration.truncatingRemainder(dividingBy: 60))
+
+        var message = ""
+        if hours != 0 {
+            message += "\(hours) hours "
         }
 
-        let announcements = [
-            Announcement(
-                remainingTime: 60 * 10,
-                message: "10 minutes. Prepare to break."),
+        if minutes != 0 {
+            message += "\(minutes) minutes "
+        }
 
-            Announcement(
-                remainingTime: 60 * 5,
-                message: "5 minutes. Please take a break now."),
+        if seconds != 0 || message.isEmpty {
+            message += "\(seconds) seconds "
+        }
 
-            Announcement(
-                remainingTime: 60 * 4,
-                message: "4 minutes. Forcible break process was initiated."),
+        return message
+    }
 
-            Announcement(
-                remainingTime: 60 * 3,
-                message: "3 minutes. You don't have much time."),
+    private func announcementMessage(
+        remainingTime: TimeInterval,
+        requiredBreakTime: TimeInterval
+    ) -> String {
+        return "System goes to sleep in \(timeAnnouncement(for: remainingTime)). "
+            + "Take a break at least for \(timeAnnouncement(for: requiredBreakTime))."
+    }
 
-            Announcement(
-                remainingTime: 60 * 2,
-                message: "2 minutes. Oh no, your dad is approaching."),
-
-            Announcement(
-                remainingTime: 60 * 1,
-                message: "1 minute. Alert! Alert! Take a break now!"),
-
-            Announcement(
-                remainingTime: 60 * 0.5,
-                message: "30 seconds. This computer goes to sleep."),
+    private func makeAnnouncement(
+        previousRemainingTime: TimeInterval,
+        currentRemainingTime: TimeInterval,
+        requiredBreakTime: TimeInterval
+    ) {
+        let triggerTimes: [TimeInterval] = [
+            60 * 10,
+            60 * 5,
+            60 * 4,
+            60 * 3,
+            60 * 2,
+            60 * 1,
+            60 * 0.5,
         ]
 
-        for announcement in announcements {
-            if (currentRemainingTime <= announcement.remainingTime)
-                && (announcement.remainingTime < previousRemainingTime)
+        for triggerTime in triggerTimes {
+            if (currentRemainingTime <= triggerTime)
+                && (triggerTime < previousRemainingTime)
             {
                 Task {
-                    await speechManager.speak(announcement.message)
+                    let message = announcementMessage(
+                        remainingTime: currentRemainingTime,
+                        requiredBreakTime: requiredBreakTime)
+                    await speechManager.speak(message)
                 }
             }
         }
