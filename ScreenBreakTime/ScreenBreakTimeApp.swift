@@ -85,7 +85,7 @@ struct ScreenBreakTimeApp: App {
             {
                 Task {
                     let message = announcementMessage(
-                        remainingTime: currentRemainingTime,
+                        remainingTime: triggerTime,
                         requiredBreakTime: requiredBreakTime)
                     await speechManager.speak(message)
                 }
