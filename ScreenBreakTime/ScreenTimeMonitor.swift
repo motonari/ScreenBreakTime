@@ -28,6 +28,17 @@ class ScreenTimeMonitor: ObservableObject {
     @Published var remainingTime = RemainingTime(duration: 0.0, requiredBreak: 0.0)
     @Published var records: [Event] = []
 
+    /// The moment until which the forcible sleep is suspended, or `nil`
+    /// when sleep is allowed. Persisted so that a restart does not clear
+    /// an active grant.
+    @Published var sleepDisabledUntil: Date? {
+        didSet {
+            UserDefaults.standard.set(sleepDisabledUntil, forKey: Self.sleepDisabledKey)
+        }
+    }
+
+    private static let sleepDisabledKey = "sleepDisabledUntil"
+
     static let shared = ScreenTimeMonitor()
 
     let modelContainer: ModelContainer
@@ -39,7 +50,29 @@ class ScreenTimeMonitor: ObservableObject {
     /// between `now - lookBackDuration` and now.
     let maxScreenTime: TimeInterval = 60 * 45
 
+    /// Whether the forcible sleep is currently suspended.
+    var isSleepDisabled: Bool {
+        if let until = sleepDisabledUntil, until > .now {
+            return true
+        }
+        return false
+    }
+
+    /// Suspend the forcible sleep for the given duration.
+    func disableSleep(for duration: TimeInterval) {
+        let until = Date.now.addingTimeInterval(duration)
+        sleepDisabledUntil = until
+        Logger.action.log("Forcible sleep disabled until \(until, privacy: .public)")
+    }
+
+    /// Re-enable the forcible sleep immediately.
+    func enableSleep() {
+        sleepDisabledUntil = nil
+        Logger.action.log("Forcible sleep re-enabled.")
+    }
+
     private init() {
+        sleepDisabledUntil = UserDefaults.standard.object(forKey: Self.sleepDisabledKey) as? Date
         do {
             let url = FileManager.default.urls(
                 for: .applicationSupportDirectory, in: .userDomainMask

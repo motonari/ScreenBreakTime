@@ -29,7 +29,7 @@ struct ScreenBreakTimeApp: App {
                 requiredBreakTime: newValue.requiredBreak
             )
 
-            if newValue.duration <= 0 {
+            if newValue.duration <= 0 && !monitor.isSleepDisabled {
                 sleepNow()
             }
         }
@@ -68,6 +68,9 @@ struct ScreenBreakTimeApp: App {
         currentRemainingTime: TimeInterval,
         requiredBreakTime: TimeInterval
     ) {
+        // Stay silent while the forcible sleep is suspended.
+        guard !monitor.isSleepDisabled else { return }
+
         let triggerTimes: [TimeInterval] = [
             60 * 10,
             60 * 5,
