@@ -61,7 +61,6 @@ struct ScreenBreakTimeApp: App {
         requiredBreakTime: TimeInterval
     ) -> String {
         return "System goes to sleep in \(timeAnnouncement(for: remainingTime)). "
-            + "Take a break at least for \(timeAnnouncement(for: requiredBreakTime))."
     }
 
     private func makeAnnouncement(
