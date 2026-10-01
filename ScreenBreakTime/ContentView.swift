@@ -13,6 +13,25 @@ struct ContentView: View {
     private let disableDuration: TimeInterval = 3 * 60 * 60
 
     var body: some View {
+        // Sheets and alerts don't work from a window-style MenuBarExtra: the
+        // popover resigns key as soon as another window appears and dismisses
+        // itself, taking the sheet with it. Present prompts inline instead.
+        if showDisablePrompt {
+            PasscodePromptView { code in
+                guard passcodeManager.verify(code) else { return false }
+                monitor.disableSleep(for: disableDuration)
+                return true
+            } onDismiss: {
+                showDisablePrompt = false
+            }
+        } else if showPasscodeSetup {
+            PasscodeSetupView { showPasscodeSetup = false }
+        } else {
+            mainContent
+        }
+    }
+
+    private var mainContent: some View {
         VStack(spacing: 12) {
             Text("Remaining: \(iso8601String(for: monitor.remainingTime.duration))")
                 .font(.title)
@@ -46,16 +65,6 @@ struct ContentView: View {
             .font(.caption)
         }
         .padding()
-        .sheet(isPresented: $showDisablePrompt) {
-            PasscodePromptView { code in
-                guard passcodeManager.verify(code) else { return false }
-                monitor.disableSleep(for: disableDuration)
-                return true
-            }
-        }
-        .sheet(isPresented: $showPasscodeSetup) {
-            PasscodeSetupView()
-        }
     }
 
     func iso8601String(for remainingTimeInterval: TimeInterval) -> String {
@@ -69,13 +78,13 @@ struct ContentView: View {
 
 /// Asks for the parent code before performing a privileged action.
 ///
-/// `onSubmit` should return `true` when the code is accepted; the sheet
-/// then dismisses itself. Returning `false` keeps the sheet open and
-/// shows an error.
+/// `onSubmit` should return `true` when the code is accepted; the prompt
+/// then dismisses itself via `onDismiss`. Returning `false` keeps the
+/// prompt open and shows an error.
 struct PasscodePromptView: View {
     let onSubmit: (String) -> Bool
+    let onDismiss: () -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @SwiftUI.State private var code = ""
     @SwiftUI.State private var showError = false
 
@@ -94,11 +103,11 @@ struct PasscodePromptView: View {
             }
 
             HStack {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { onDismiss() }
                 Spacer()
                 Button("Confirm") {
                     if onSubmit(code) {
-                        dismiss()
+                        onDismiss()
                     } else {
                         showError = true
                         code = ""
@@ -116,8 +125,9 @@ struct PasscodePromptView: View {
 /// Sets or changes the parent code. Changing an existing code requires
 /// entering the current one first.
 struct PasscodeSetupView: View {
+    let onDismiss: () -> Void
+
     @ObservedObject private var passcodeManager = PasscodeManager.shared
-    @Environment(\.dismiss) private var dismiss
 
     @SwiftUI.State private var currentCode = ""
     @SwiftUI.State private var newCode = ""
@@ -145,7 +155,7 @@ struct PasscodeSetupView: View {
             }
 
             HStack {
-                Button("Cancel") { dismiss() }
+                Button("Cancel") { onDismiss() }
                 Spacer()
                 Button("Save") { save() }
                     .keyboardShortcut(.defaultAction)
@@ -169,7 +179,7 @@ struct PasscodeSetupView: View {
             return
         }
         passcodeManager.setPasscode(newCode)
-        dismiss()
+        onDismiss()
     }
 }
 
