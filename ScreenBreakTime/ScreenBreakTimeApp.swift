@@ -12,6 +12,8 @@ struct ScreenBreakTimeApp: App {
 
     let speechManager = SpeechManager()
 
+    @SwiftUI.State private var previousSleepDisableRemaining: TimeInterval?
+
     var body: some Scene {
         MenuBarExtra {
             ContentView()
@@ -28,10 +30,17 @@ struct ScreenBreakTimeApp: App {
                 currentRemainingTime: newValue.duration,
                 requiredBreakTime: newValue.requiredBreak
             )
+            announceSleepDisableEndingIfNeeded()
 
             if newValue.duration <= 0 && !monitor.isSleepDisabled {
                 sleepNow()
             }
+        }
+        .onChange(of: monitor.sleepDisabledUntil) { _, _ in
+            // Reset tracking so that re-enabling the override doesn't
+            // immediately replay an announcement left over from the
+            // previous grant.
+            previousSleepDisableRemaining = nil
         }
     }
 
@@ -89,6 +98,39 @@ struct ScreenBreakTimeApp: App {
                     let message = announcementMessage(
                         remainingTime: triggerTime,
                         requiredBreakTime: requiredBreakTime)
+                    await speechManager.speak(message)
+                }
+            }
+        }
+    }
+
+    private func announceSleepDisableEndingIfNeeded() {
+        guard let until = monitor.sleepDisabledUntil, until > .now else {
+            previousSleepDisableRemaining = nil
+            return
+        }
+
+        let remaining = until.timeIntervalSinceNow
+        defer { previousSleepDisableRemaining = remaining }
+
+        // Nothing to compare against right after the override starts (or
+        // right after this tracking was reset), so skip announcing once.
+        guard let previous = previousSleepDisableRemaining else { return }
+
+        let triggerTimes: [TimeInterval] = [
+            60 * 10,
+            60 * 5,
+            60 * 4,
+            60 * 3,
+            60 * 2,
+            60 * 1,
+            60 * 0.5,
+        ]
+
+        for triggerTime in triggerTimes {
+            if remaining <= triggerTime && triggerTime < previous {
+                Task {
+                    let message = "Extended time ends in \(timeAnnouncement(for: triggerTime))."
                     await speechManager.speak(message)
                 }
             }
