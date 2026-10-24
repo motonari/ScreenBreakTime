@@ -48,10 +48,14 @@ struct ContentView: View {
                 Button("Disable sleep for 3 hours") {
                     showDisablePrompt = true
                 }
-                .disabled(!passcodeManager.isSet)
+                .disabled(!passcodeManager.isSet || !monitor.canDisableSleep)
 
                 if !passcodeManager.isSet {
                     Text("Set a parent code to enable this.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !monitor.canDisableSleep {
+                    Text("Already used today. Available again tomorrow.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

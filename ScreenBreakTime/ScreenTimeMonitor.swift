@@ -39,6 +39,17 @@ class ScreenTimeMonitor: ObservableObject {
 
     private static let sleepDisabledKey = "sleepDisabledUntil"
 
+    /// The most recent moment the forcible sleep was disabled. Used to
+    /// limit this privileged action to once per calendar day. Persisted
+    /// so that a restart does not reset the daily allowance.
+    @Published var lastSleepDisableDate: Date? {
+        didSet {
+            UserDefaults.standard.set(lastSleepDisableDate, forKey: Self.lastSleepDisableDateKey)
+        }
+    }
+
+    private static let lastSleepDisableDateKey = "lastSleepDisableDate"
+
     static let shared = ScreenTimeMonitor()
 
     let modelContainer: ModelContainer
@@ -58,10 +69,20 @@ class ScreenTimeMonitor: ObservableObject {
         return false
     }
 
+    /// Whether the forcible sleep can still be disabled today.
+    ///
+    /// The privileged action is limited to once per calendar day,
+    /// regardless of whether it was later re-enabled early.
+    var canDisableSleep: Bool {
+        guard let lastSleepDisableDate else { return true }
+        return !Calendar.current.isDateInToday(lastSleepDisableDate)
+    }
+
     /// Suspend the forcible sleep for the given duration.
     func disableSleep(for duration: TimeInterval) {
         let until = Date.now.addingTimeInterval(duration)
         sleepDisabledUntil = until
+        lastSleepDisableDate = .now
         Logger.action.log("Forcible sleep disabled until \(until, privacy: .public)")
     }
 
@@ -73,6 +94,8 @@ class ScreenTimeMonitor: ObservableObject {
 
     private init() {
         sleepDisabledUntil = UserDefaults.standard.object(forKey: Self.sleepDisabledKey) as? Date
+        lastSleepDisableDate =
+            UserDefaults.standard.object(forKey: Self.lastSleepDisableDateKey) as? Date
         do {
             let url = FileManager.default.urls(
                 for: .applicationSupportDirectory, in: .userDomainMask
